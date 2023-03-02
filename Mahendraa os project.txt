@@ -1,0 +1,74 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define MAX_PROCESSES 10
+#define TIME_QUANTUM 4
+#define MAX_CPU_BURST_TIME 10
+
+struct Process {
+    int arrival_time;
+    int cpu_burst_time;
+    int remaining_cpu_burst_time;
+    int wait_time;
+    int turnaround_time;
+    int completed;
+};
+
+int main() {
+    // Seed the random number generator
+    srand(time(NULL));
+    
+    // Generate a set of random processes
+    struct Process processes[MAX_PROCESSES];
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        processes[i].arrival_time = rand() % MAX_PROCESSES;
+        processes[i].cpu_burst_time = rand() % MAX_CPU_BURST_TIME + 1;
+        processes[i].remaining_cpu_burst_time = processes[i].cpu_burst_time;
+        processes[i].wait_time = 0;
+        processes[i].turnaround_time = 0;
+        processes[i].completed = 0;
+    }
+    
+    // Run the Round Robin scheduling algorithm
+    int time = 0;
+    int num_completed = 0;
+    while (num_completed < MAX_PROCESSES && time < 100) {
+        for (int i = 0; i < MAX_PROCESSES; i++) {
+            if (processes[i].arrival_time <= time && !processes[i].completed) {
+                if (processes[i].remaining_cpu_burst_time > TIME_QUANTUM) {
+                    processes[i].remaining_cpu_burst_time -= TIME_QUANTUM;
+                    time += TIME_QUANTUM;
+                } else {
+                    processes[i].wait_time = time - processes[i].arrival_time - processes[i].cpu_burst_time;
+                    processes[i].turnaround_time = time - processes[i].arrival_time;
+                    processes[i].completed = 1;
+                    num_completed++;
+                    time += processes[i].remaining_cpu_burst_time;
+                }
+            }
+        }
+    }
+    
+    // Calculate and print the average waiting time and turnaround time
+    int total_wait_time = 0;
+    int total_turnaround_time = 0;
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        total_wait_time += processes[i].wait_time;
+        total_turnaround_time += processes[i].turnaround_time;
+    }
+    double avg_wait_time = (double)total_wait_time / MAX_PROCESSES;
+    double avg_turnaround_time = (double)total_turnaround_time / MAX_PROCESSES;
+    printf("Average waiting time: %.2f\n", avg_wait_time);
+    printf("Average turnaround time: %.2f\n", avg_turnaround_time);
+    
+    // Compare with the ideal scenario of a perfect scheduler
+    int ideal_turnaround_time = 0;
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        ideal_turnaround_time += processes[i].cpu_burst_time;
+    }
+    double ideal_avg_turnaround_time = (double)ideal_turnaround_time / MAX_PROCESSES;
+    printf("Ideal average turnaround time: %.2f\n", ideal_avg_turnaround_time);
+    
+    return 0;
+}
